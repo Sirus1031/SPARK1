@@ -21,6 +21,7 @@ IMPORTANT:
 """
 
 import os
+from urllib.parse import quote_plus
 import json
 import hashlib
 import datetime
@@ -33,37 +34,33 @@ import jwt  # PyJWT
 from werkzeug.security import generate_password_hash, check_password_hash
 
 import dash
-from dash import html, dcc, Dash, Input, Output, State, ctx
-import dash_table
+from dash import html, dcc, Dash, Input, Output, State, ctx, dash_table
 import pandas as pd
 
-# -----------------------
-# Configuration (ENV)
-# -----------------------
-# Required env variables (set these in your environment)
-# AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_TENANT_ID
-# SECRET_KEY (Flask session secret)
-# SQLALCHEMY_DATABASE_URI (mysql+pymysql://user:pass@host/dbname)
-# JWT_SECRET (secret to sign Pi JWTs)
-# PI_TOKEN_EXP_MIN (e.g. 60)
-# FRONTEND_BASE (public URL used as redirect URI for Azure; e.g. https://yourdomain.com)
 
-AZURE_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID", "admin_spark")
-AZURE_CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET", "Spark1ETS")
-AZURE_TENANT_ID = os.environ.get("AZURE_TENANT_ID", "mysql-spark.mysql.database.azure.com")
-SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+# load required secrets (fail fast instead of using insecure defaults)
+# load required secrets (with defaults for testing)
+AZURE_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID", "olivier.genest.2@ens.etsmtl.ca")
+AZURE_CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET", "Paul_Gen246")
+AZURE_TENANT_ID = os.environ.get("AZURE_TENANT_ID", "common")
+SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
+JWT_SECRET = os.environ.get("JWT_SECRET", "dev-jwt-secret-change-in-production")
+
+DB_USER = os.environ.get("MYSQL_USER", "admin_spark")
+DB_PASS = quote_plus(os.environ.get("MYSQL_PASSWORD", "Spark1ETS"))  # quote special chars
+DB_HOST = os.environ.get("MYSQL_HOST", "mysql-spark.mysql.database.azure.com")
+DB_NAME = os.environ.get("MYSQL_DATABASE", "myconnector")
 SQLALCHEMY_DATABASE_URI = os.environ.get(
     "SQLALCHEMY_DATABASE_URI",
-    "mysql+pymysql://admin_spark:Spark1ETS@mysql-spark.mysql.database.azure.com:3306/myconnector"
+    f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:3306/{DB_NAME}?ssl_ca=&ssl_verify_cert=true&ssl_verify_identity=true"
 )
-JWT_SECRET = os.environ.get("JWT_SECRET", "jwt-secret-change-me")
-PI_TOKEN_EXP_MIN = int(os.environ.get("PI_TOKEN_EXP_MIN", "60"))
-FRONTEND_BASE = os.environ.get("FRONTEND_BASE", "http://mysql-spark.mysql.database.azure.com:8050")
 
-# MSAL config
+PI_TOKEN_EXP_MIN = int(os.environ.get("PI_TOKEN_EXP_MIN", "60"))
+FRONTEND_BASE = os.environ.get("FRONTEND_BASE", "https://example.com")
+
 AUTHORITY = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}"
-SCOPE = ["User.Read"]  # adjust scopes if needed
-REDIRECT_PATH = "/getAToken"  # must be registered in Azure app
+SCOPE = ["User.Read"]
+REDIRECT_PATH = "/getAToken"
 REDIRECT_URI = FRONTEND_BASE + REDIRECT_PATH
 
 # -----------------------
@@ -74,21 +71,23 @@ server.config["SECRET_KEY"] = SECRET_KEY
 server.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
 server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+
+
 import pymysql, os; 
 try:
     conn = pymysql.connect(
         host=os.getenv("MYSQL_HOST", "mysql-spark.mysql.database.azure.com"),
         user=os.getenv("MYSQL_USER", "admin_spark"),
         password=os.getenv("MYSQL_PASSWORD", "Spark1ETS"),
-        database=os.getenv("MYCONNECTOR", "myconnector"),
+        database=os.getenv("MYSQL_DATABASE", "myconnector"),  # Fixed from MYCONNECTOR
         port=int(os.getenv("MYSQL_PORT", "3306")),
+        ssl={'ssl_mode': 'REQUIRED'},  # Added SSL requirement
         connect_timeout=3
     )
     print(f"✅ Connected to MySQL at {os.getenv('MYSQL_HOST', 'mysql-spark.mysql.database.azure.com')}")
     conn.close()
 except Exception as e:
     print(f"❌ Could not connect to MySQL: {e}")
-
 
 db = SQLAlchemy(server)
 
@@ -664,3 +663,7 @@ if __name__ == "__main__":
     # Safety: ensure redirect uri uses the right FRONTEND_BASE
     print("Starting Dash app. FRONTEND_BASE:", FRONTEND_BASE)
     server.run(host="0.0.0.0", port=8050, debug=True)
+else:
+    print("Dash app loaded as module.")
+    with server.app_context():
+        db.create_all()  # ensure tables exist
