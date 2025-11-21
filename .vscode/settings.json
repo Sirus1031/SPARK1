@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/93a9858e-c1e6-40a1-9245-1226911fe50f/resourceGroups/Spark/providers/Microsoft.Web/sites/Spark-Web-Access",
+    "appService.deploySubpath": "."
+}

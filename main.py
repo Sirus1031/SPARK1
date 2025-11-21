@@ -40,8 +40,8 @@ import pandas as pd
 
 # load required secrets (fail fast instead of using insecure defaults)
 # load required secrets (with defaults for testing)
-AZURE_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID", "olivier.genest.2@ens.etsmtl.ca")
-AZURE_CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET", "Paul_Gen246")
+AZURE_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID", "AZURE_CLIENT_ID")
+AZURE_CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET", "AZURE_CLIENT_SECRET")
 AZURE_TENANT_ID = os.environ.get("AZURE_TENANT_ID", "common")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
 JWT_SECRET = os.environ.get("JWT_SECRET", "dev-jwt-secret-change-in-production")
