@@ -659,13 +659,11 @@ def dev_init_db():
 # -----------------------
 # Run
 # -----------------------
-app = dash.Dash(__name__)
-server = app.server  # This exposes the Flask server for Gunicorn
 
 if __name__ == "__main__":
     # Safety: ensure redirect uri uses the right FRONTEND_BASE
     print("Starting Dash app. FRONTEND_BASE:", FRONTEND_BASE)
-    server.run(host="0.0.0.0", port=8050, debug=True)
+    server.run(host="0.0.0.0", port=8000, debug=True)
 else:
     print("Dash app loaded as module.")
     with server.app_context():
