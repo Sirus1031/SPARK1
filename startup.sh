@@ -1,14 +1,15 @@
 #!/bin/bash
 
-# Install uv if not already installed
+cd /home/site/wwwroot
+
+# Install uv if needed
 if ! command -v uv &> /dev/null; then
     curl -LsSf https://astral.sh/uv/install.sh | sh
     export PATH="$HOME/.cargo/bin:$PATH"
 fi
 
-# Sync dependencies using uv
-cd /home/site/wwwroot
+# Sync dependencies
 uv sync
 
-# Run the application using the virtual environment
-uv run python main.py
+# Run with gunicorn
+uv run gunicorn main:server -b 0.0.0.0:8000 --timeout 600
